@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Simple Data Lake Setup
+
+Resources:
+  RawDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: my-raw-data-bucket
+
+  GlueDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      DatabaseInput:
+        Name: my_database
+
+  GlueCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Name: my-crawler
+      Role: arn:aws:iam::YOUR_ACCOUNT_ID:role/GlueCrawlerRole
+      DatabaseName: !Ref GlueDatabase
+      Targets:
+        S3Targets:
+          - Path: !GetAtt RawDataBucket.Arn
+
+  GlueJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Name: my-glue-job
+      Role: arn:aws:iam::YOUR_ACCOUNT_ID:role/GlueJobRole
+      Command:
+        Name: glueetl
+        ScriptLocation: s3://path-to-your-glue-script/script.py
+      DefaultArguments:
+        "--TempDir": "s3://your-temporary-directory/"
+      Connections:
+        Connections: [my_connection]
+    
+  AnalyticsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: my-analytics-bucket
+
+  EMRCluster:
+    Type: AWS::EMR::Cluster
+    Properties:
+      Name: my-emr-cluster
+      Applications:
+        - Name: Spark
+      Instances:
+        MasterInstanceGroup:
+          InstanceCount: 1
+          InstanceType: m5.xlarge
+        CoreInstanceGroup:
+          InstanceCount: 2
+          InstanceType: m5.xlarge
+      ReleaseLabel: emr-6.4.0
+      VisibleToAllUsers: true
+
+  ResultBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: my-results-bucket
+
+
+
+
+
+
+
+
+
+
+
+
